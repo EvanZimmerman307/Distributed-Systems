@@ -1,0 +1,88 @@
+			+--------------------------+
+			|          CS 4740         |
+			|   LAB 2C: Persistence    |
+			|       DESIGN DOCUMENT    |
+			+--------------------------+
+				   
+---- META INFO ----
+
+>> Fill in your name and email address.
+
+Evan Zimmerman <ewz9kg@virginia.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, please give them here.
+
+No preliminary comments. 
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the official documentation, course
+>> text, lecture notes, and course staff.
+
+I only consulted sources provided by the course.
+
+---- WORKFLOW ----
+
+>> Please describe your implementation workflow for this lab, essentially how
+>> you breakdown it into several manageable tasks. Which baby steps you took
+>> to start adding some codes
+
+To start, I attended the lab overview session held by the TAs. 
+I broke down the lab into the sub-tasks that were outlined by the TAs in the overview session. 
+They suggested to initially implement the optimized log replication, and I did so, accouting for the 3 cases where optimizing the log backup was necessary.
+After implementing optimized log replication, I made sure it worked by running the lab 2B test cases. 
+Next, I implemented the persistence mechanism by implementing the persist() and readPersist() functions. 
+Then I added code to persist the raft states at the points advised by the TAs. 
+After completing my initial implementation, I moved on to debugging (independetly and in office hours).
+
+---- BLOCKER ----
+
+>> Please describe the most challenging implementation part of this lab:
+>> why it is hard and how did you resolve it
+
+The most challenging implementation part of this lab was implementing the persistence mechanism. 
+I realized I was implementing the persistence functions incorrectly because I was initially failing the persistence tests.
+I was also struggling with persisting raft states in the right spots.
+The syntax and what was going on under the hood for the persistence functions confused me at first, 
+specifically the functionality of the encoder and the decoder. 
+I was overthinking it and confused myself about how those objects worked, but I cleared up my confusion in office hours, and fixed the functions.
+I was also overly persisting at first. I resolved this issue because a TA advised me to use "defer rf.persist()", 
+instead of trying to add persist() at every exact point that seemed appropriate. This change was most helpful for persisting in the RPC receivers.
+
+
+
+---- STRUGGLES ----
+
+>> Please describe your most memorizable debugging experience in this lab:
+>> what is the bug symptom, how did you resolve the issue (if successful), 
+>> and what is the fix 
+
+My most memorable debugging experience in this lab came from an issue where a leader was sending a new log entry to a follower that had been killed, 
+but whose log was correct up to that point. 
+In my lab 2B implementation, I had overlooked the case where an appendEntries RPC failed to reach a follower and thus needed to be re-sent. 
+This issue was exposed in the basic persistence test case. Since the killed raft's log was correct up to that point, even when the follower came back to life, 
+the leader did not notice a log conflict because the follower's nextIndex had not been changed. 
+I noticed this bug by writing detailed log statements. 
+I resolved the issue by having the leader re-send a log entry after briefly timing out, if it did not receive a reply from sending a log entry.
+Intuitively, this made sense. If an RPC containing log entries never reached it's destination, it should be sent again.
+
+---- HELPER ----
+
+>> Which material is most useful for you to implement this lab, slides/website/guides.. 
+
+The most useful material for me was the lab overview recording/slides. I followed the workflow outlined by the TAs as closely as possible and I think it greatly helped my implementation process.
+
+
+---- ADVICE ----
+
+>> If you want to leave some advice for future students who do this lab, what
+>> would be your advice
+
+First and foremost, follow the TA review session as closely as possible. 
+For optimizing log replication, obviously account for all the cases where it is necessary, but do say in a way that is easy to
+integrate into your current code. 
+It is ok to check the cases in a different order than the one advised by the TAs as long as you still check them all. 
+Since lab2C is the first lab to test situations where servers are killed, it is a good idead to check !rf.killed() 
+before executing certain mechanisms.
